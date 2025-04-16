@@ -1,0 +1,22 @@
+services:
+  app:
+    build: .
+    container_name: ascue
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+    networks:
+      - ascue
+
+  redis:
+    image: redis:7-alpine
+    container_name: kpi-redis
+    networks:
+      - ascue
+
+networks:
+  ascue:
+    driver: bridge
