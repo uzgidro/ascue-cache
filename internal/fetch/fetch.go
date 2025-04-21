@@ -5,36 +5,50 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
-func StartFetcher(urls []string, keys []string, interval time.Duration, store redisstore.Store) {
+func Launch(urls []string, keys []string, interval time.Duration, store redisstore.Store) {
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
 		for {
+			var wg sync.WaitGroup
+
 			for index, url := range urls {
-				key := keys[index]
-				FetchAndStore(url, key, store)
+				wg.Add(1)
+				go func(u, k string) {
+					defer wg.Done()
+					data, err := GetData(u)
+					if err == nil {
+						storeError := store.Set(k, data)
+						if storeError != nil {
+							log.Println("Redis set error:", err)
+						}
+					}
+				}(url, keys[index])
 			}
+			wg.Wait()
 			<-ticker.C
 		}
 	}()
 }
 
-func FetchAndStore(url string, key string, store redisstore.Store) {
+func GetData(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Println("Fetch error:", err)
-		return
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
-
-	err = store.Set(key, body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Redis set error:", err)
+		log.Println("Read error:", err)
+		return nil, err
 	}
+
+	return body, nil
 }
