@@ -1,7 +1,9 @@
 package api
 
 import (
+	"ascue/internal/fetch"
 	"ascue/internal/redisstore"
+	"ascue/internal/resource"
 	"fmt"
 	"github.com/go-chi/cors"
 	"net/http"
@@ -24,13 +26,25 @@ func NewRouter(store redisstore.Store) http.Handler {
 	r.Get("/api/*", func(w http.ResponseWriter, r *http.Request) {
 		key := chi.URLParam(r, "*")
 
-		val, err := store.Get(key)
+		resources, err := resource.GetResources()
 		if err != nil {
-			http.Error(w, "not found", http.StatusNotFound)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, string(val))
+
+		// remove in case using redis
+		data, err := fetch.GetData(resources[key])
+		if err == nil {
+			fmt.Fprint(w, string(data))
+		} else {
+			val, err := store.Get(key)
+			if err != nil {
+				http.Error(w, "not found", http.StatusNotFound)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, string(val))
+		}
 	})
 
 	return r

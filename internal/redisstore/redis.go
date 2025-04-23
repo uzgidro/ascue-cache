@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+type Store interface {
+	Set(key string, value []byte) error
+	Get(key string) ([]byte, error)
+}
+
 type RedisStore struct {
 	client *redis.Client
 }
