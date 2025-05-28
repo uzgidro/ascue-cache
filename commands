@@ -1,0 +1,2 @@
+docker build -t suxa/treplex-ascue:1.0.3 .
+docker push suxa/treplex-ascue:1.0.3
