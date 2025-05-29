@@ -3,7 +3,6 @@ package redisstore
 import (
 	"context"
 	"github.com/redis/go-redis/v9"
-	"time"
 )
 
 type Store interface {
@@ -20,7 +19,7 @@ func New(client *redis.Client) Store {
 }
 
 func (r *RedisStore) Set(key string, value []byte) error {
-	return r.client.Set(context.Background(), key, value, 5*time.Minute).Err()
+	return r.client.Set(context.Background(), key, value, 0).Err()
 }
 
 func (r *RedisStore) Get(key string) ([]byte, error) {

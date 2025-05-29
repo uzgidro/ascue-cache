@@ -2,6 +2,7 @@ package fetch
 
 import (
 	"ascue/internal/redisstore"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -22,14 +23,22 @@ func Launch(urls []string, keys []string, interval time.Duration, store redissto
 				go func(u, k string) {
 					defer wg.Done()
 					data, err := GetData(u)
-					if err == nil {
-						storeError := store.Set(k, data)
-						if storeError != nil {
-							log.Println("Redis set error:", err)
-						}
+					if err != nil {
+						return
+					}
+
+					if !IsJSON(data) {
+						log.Printf("Invalid JSON response from %s", u)
+						return
+					}
+
+					storeError := store.Set(k, data)
+					if storeError != nil {
+						log.Println("Redis set error:", storeError)
 					}
 				}(url, keys[index])
 			}
+
 			wg.Wait()
 			<-ticker.C
 		}
@@ -51,4 +60,9 @@ func GetData(url string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+func IsJSON(data []byte) bool {
+	var js json.RawMessage
+	return json.Unmarshal(data, &js) == nil
 }
