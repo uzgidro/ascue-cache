@@ -1,21 +1,23 @@
-# Базовый образ
-FROM golang:1.24.2-alpine
+FROM golang:1.24.2-alpine AS builder
 
-# Создаём рабочую директорию внутри контейнера
 WORKDIR /app
 
-# Копируем go.mod и go.sum
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Копируем весь проект
 COPY . .
 
-# Собираем бинарник
-RUN go build -o ascue .
+RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /app/ascue .
 
-# Указываем порт
+
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=builder /app/ascue .
+
+COPY .env .
+
 EXPOSE 8080
 
-# Команда запуска
 CMD ["./ascue"]

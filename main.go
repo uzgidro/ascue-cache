@@ -1,8 +1,8 @@
 package main
 
 import (
-	"ascue/config"
 	"ascue/internal/api"
+	"ascue/internal/config"
 	"ascue/internal/fetch"
 	"ascue/internal/redisstore"
 	"ascue/internal/storage"
