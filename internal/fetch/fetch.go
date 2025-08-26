@@ -3,6 +3,7 @@ package fetch
 import (
 	"ascue/internal/redisstore"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 	"time"
 )
 
-func Launch(urls []string, keys []string, interval time.Duration, store redisstore.Store) {
+func Launch(urls []string, keys []string, interval time.Duration, store redisstore.Store, client *http.Client) {
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
@@ -22,7 +23,7 @@ func Launch(urls []string, keys []string, interval time.Duration, store redissto
 				wg.Add(1)
 				go func(u, k string) {
 					defer wg.Done()
-					data, err := GetData(u)
+					data, err := GetData(client, u)
 					if err != nil {
 						return
 					}
@@ -45,17 +46,23 @@ func Launch(urls []string, keys []string, interval time.Duration, store redissto
 	}()
 }
 
-func GetData(url string) ([]byte, error) {
-	resp, err := http.Get(url)
+func GetData(client *http.Client, url string) ([]byte, error) {
+	resp, err := client.Get(url)
 	if err != nil {
-		log.Println("Fetch error:", err)
+		log.Printf("Fetch error for URL %s: %v", url, err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		err := fmt.Errorf("bad status code from %s: %d", url, resp.StatusCode)
+		log.Println(err)
+		return nil, err
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Read error:", err)
+		log.Printf("Read error for URL %s: %v", url, err)
 		return nil, err
 	}
 

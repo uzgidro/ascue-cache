@@ -8,6 +8,7 @@ import (
 	"ascue/internal/storage"
 	"log"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -16,8 +17,15 @@ func main() {
 	rawRedis := storage.NewRedisClient(cfg.RedisAddr, cfg.RedisPass)
 	store := redisstore.New(rawRedis)
 
-	fetch.Launch(cfg.Targets, cfg.Keys, cfg.Interval, store)
+	httpClient := &http.Client{
+		Timeout: 60 * time.Second,
+	}
+
+	fetch.Launch(cfg.Targets, cfg.Keys, cfg.Interval, store, httpClient)
 
 	log.Println("Server started on :8080")
-	http.ListenAndServe(":8080", api.NewRouter(store))
+	err := http.ListenAndServe(":8080", api.NewRouter(store))
+	if err != nil {
+		log.Fatalf("Server failed to start: %v", err)
+	}
 }
