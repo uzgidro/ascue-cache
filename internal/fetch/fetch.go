@@ -12,36 +12,44 @@ import (
 )
 
 func Launch(urls []string, keys []string, interval time.Duration, store redisstore.Store, client *http.Client) {
+	fetchAll := func() {
+		var wg sync.WaitGroup
+
+		for index, url := range urls {
+			wg.Add(1)
+			go func(u, k string) {
+				defer wg.Done()
+				data, err := GetData(client, u)
+				if err != nil {
+					return
+				}
+
+				if !IsJSON(data) {
+					log.Printf("Invalid JSON response from %s", u)
+					return
+				}
+
+				storeError := store.Set(k, data)
+				if storeError != nil {
+					log.Println("Redis set error:", storeError)
+				}
+			}(url, keys[index])
+		}
+
+		wg.Wait()
+	}
+
 	go func() {
+		// Initial fetch on startup
+		log.Println("Starting initial fetch...")
+		fetchAll()
+		log.Println("Initial fetch completed")
+
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
-		for {
-			var wg sync.WaitGroup
-
-			for index, url := range urls {
-				wg.Add(1)
-				go func(u, k string) {
-					defer wg.Done()
-					data, err := GetData(client, u)
-					if err != nil {
-						return
-					}
-
-					if !IsJSON(data) {
-						log.Printf("Invalid JSON response from %s", u)
-						return
-					}
-
-					storeError := store.Set(k, data)
-					if storeError != nil {
-						log.Println("Redis set error:", storeError)
-					}
-				}(url, keys[index])
-			}
-
-			wg.Wait()
-			<-ticker.C
+		for range ticker.C {
+			fetchAll()
 		}
 	}()
 }
