@@ -16,7 +16,7 @@ WORKDIR /app
 
 COPY --from=builder /app/ascue .
 
-COPY .env .
+COPY config.yaml .
 
 EXPOSE 8080
 

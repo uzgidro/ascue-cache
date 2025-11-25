@@ -2,44 +2,35 @@ package config
 
 import (
 	"log"
-	"os"
-	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
+type RedisConfig struct {
+	Addr string `yaml:"addr" env:"REDIS_ADDR" env-default:"localhost:6379"`
+	Pass string `yaml:"pass" env:"REDIS_PASS"`
+}
+
 type Config struct {
-	Interval  time.Duration
-	Targets   []string
-	Keys      []string
-	RedisAddr string
-	RedisPass string
+	Interval time.Duration `yaml:"interval" env:"PING_INTERVAL" env-default:"1m"`
+	Targets  []string      `yaml:"targets" env:"PING_TARGETS"`
+	Keys     []string      `yaml:"keys" env:"PING_KEYS"`
+	Redis    RedisConfig   `yaml:"redis"`
 }
 
 func Load() Config {
-	err := godotenv.Load()
+	var cfg Config
+
+	// Try to read from config.yaml first, fallback to environment variables
+	err := cleanenv.ReadConfig("config.yaml", &cfg)
 	if err != nil {
-		log.Println(".env file not found, using defaults")
+		log.Println("config.yaml not found, trying environment variables")
+		err = cleanenv.ReadEnv(&cfg)
+		if err != nil {
+			log.Fatal("Failed to load configuration:", err)
+		}
 	}
 
-	intervalStr := os.Getenv("PING_INTERVAL")
-	if intervalStr == "" {
-		intervalStr = "1m"
-	}
-	interval, err := time.ParseDuration(intervalStr)
-	if err != nil {
-		interval = time.Minute
-	}
-
-	targets := strings.Split(os.Getenv("PING_TARGETS"), ",")
-	keys := strings.Split(os.Getenv("PING_KEYS"), ",")
-
-	return Config{
-		Interval:  interval,
-		Targets:   targets,
-		Keys:      keys,
-		RedisAddr: os.Getenv("REDIS_ADDR"),
-		RedisPass: os.Getenv("REDIS_PASS"),
-	}
+	return cfg
 }
