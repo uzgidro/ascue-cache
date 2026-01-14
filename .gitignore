@@ -1,3 +1,7 @@
 .env
 .idea
 *.tar
+config.*
+/.claude
+*.exe
+nul
