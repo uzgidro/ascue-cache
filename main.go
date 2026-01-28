@@ -14,7 +14,7 @@ import (
 func main() {
 	cfg := config.Load()
 
-	rawRedis := storage.NewRedisClient(cfg.Redis.Addr, cfg.Redis.Pass)
+	rawRedis := storage.NewRedisClient(cfg.Redis.Addr, cfg.Redis.Pass, cfg.Redis.DB)
 	store := redisstore.New(rawRedis)
 
 	httpClient := &http.Client{

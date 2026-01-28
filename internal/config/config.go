@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -10,6 +11,7 @@ import (
 type RedisConfig struct {
 	Addr string `yaml:"addr" env:"REDIS_ADDR" env-default:"localhost:6379"`
 	Pass string `yaml:"pass" env:"REDIS_PASS"`
+	DB   int    `yaml:"db" env:"REDIS_DB" env-default:"0"`
 }
 
 type Config struct {
@@ -22,8 +24,12 @@ type Config struct {
 func Load() Config {
 	var cfg Config
 
-	// Try to read from config.yaml first, fallback to environment variables
-	err := cleanenv.ReadConfig("config.yaml", &cfg)
+	// Try to read from config file first, fallback to environment variables
+	configPath := "config/config.yaml"
+	if envPath := os.Getenv("CONFIG_PATH"); envPath != "" {
+		configPath = envPath
+	}
+	err := cleanenv.ReadConfig(configPath, &cfg)
 	if err != nil {
 		log.Println("config.yaml not found, trying environment variables")
 		err = cleanenv.ReadEnv(&cfg)

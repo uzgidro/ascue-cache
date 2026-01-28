@@ -1,7 +1,8 @@
 .env
 .idea
 *.tar
-config.*
+config/config.yaml
 /.claude
 *.exe
 nul
+/ascue-cache

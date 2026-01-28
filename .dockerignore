@@ -1,0 +1,25 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.claude
+
+# CI/CD
+.github
+
+# Build artifacts
+/ascue-cache
+*.exe
+*.tar
+
+# Config (mounted at runtime)
+/config
+
+# Other
+/docs
+.env
+commands
+docker-compose
+*.md
