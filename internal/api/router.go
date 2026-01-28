@@ -21,6 +21,15 @@ func NewRouter(store redisstore.Store) http.Handler {
 		MaxAge:           300,
 	}))
 
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		if err := store.Ping(); err != nil {
+			http.Error(w, "unhealthy", http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "ok")
+	})
+
 	r.Get("/api/*", func(w http.ResponseWriter, r *http.Request) {
 		key := chi.URLParam(r, "*")
 

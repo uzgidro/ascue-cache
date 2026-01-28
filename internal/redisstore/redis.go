@@ -8,6 +8,7 @@ import (
 type Store interface {
 	Set(key string, value []byte) error
 	Get(key string) ([]byte, error)
+	Ping() error
 }
 
 type RedisStore struct {
@@ -28,4 +29,8 @@ func (r *RedisStore) Get(key string) ([]byte, error) {
 		return nil, err
 	}
 	return val, nil
+}
+
+func (r *RedisStore) Ping() error {
+	return r.client.Ping(context.Background()).Err()
 }
