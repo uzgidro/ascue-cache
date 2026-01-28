@@ -9,7 +9,7 @@ on:
         type: string
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/treplex-ascue
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/ascue-cache
 
 jobs:
   promote:
@@ -42,11 +42,11 @@ jobs:
           cd gitops
 
           # Обновляем image tag через sed
-          sed -i "s|newTag:.*|newTag: ${{ inputs.image_tag }}|g" apps/treplex-ascue/overlays/prod/kustomization.yaml
+          sed -i "s|newTag:.*|newTag: ${{ inputs.image_tag }}|g" apps/ascue-cache/overlays/prod/kustomization.yaml
 
           # Коммит и пуш если есть изменения
           if [[ -n $(git status --porcelain) ]]; then
-            git add apps/treplex-ascue/overlays/prod/kustomization.yaml
+            git add apps/ascue-cache/overlays/prod/kustomization.yaml
             git commit -m "deploy(prod): ${{ inputs.image_tag }}"
             git push
           else
